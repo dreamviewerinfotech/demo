@@ -84,38 +84,37 @@ exports.signUp = async (req, res) => {
 
 exports.signIn = async (req, res) => {
   try {
-    const { mobileno, password } = req.body;
+    const { email, password } = req.body;
 
-    // Find the user by mobile number
-    const User = await UserModel.findOne({ mobileno });
+    const user = await UserModel.findOne({ email });
 
-    // Check if the user exists
-    if (!User) {
-      return res
-        .status(404)
-        .json({ error: "User not found with provided details..." });
+    if (!user) {
+      return res.status(404).json({ error: "User not found with provided email..." });
     }
 
-    // Compare the provided password with the hashed password in the database
-    const passwordMatch = await bcrypt.compare(password, User.password);
+    const passwordMatch = await bcrypt.compare(password, user.password);
 
     if (!passwordMatch) {
       return res.status(401).json({ error: "Invalid password" });
     }
 
-    // Generate a JWT token
-    const token = jwt.sign({ id: User._id }, "121212WE", {
+    const endpoint = await user.getEndpointForDomain();
+
+    if (!endpoint) {
+      return res.status(404).json({ error: "No endpoint found for the user's email domain" });
+    }
+
+    const token = jwt.sign({ id: user._id }, "121212WE", {
       expiresIn: "1h", // Set the expiration time for the token
     });
 
-    // Return the token in the response
     return res.status(200).json({
-      message: `hey ${User.Name} , you are successfully logged In...`,
-      Email: User.email,
-      mobileno: User.mobileno,
+      message: `Hey ${user.Name}, you are successfully logged in...`,
+      Email: user.email,
+      mobileno: user.mobileno,
+      endpoint,
       accessToken: token,
     });
-    console.log(`${User.Name} just logged in...`);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
