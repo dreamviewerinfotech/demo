@@ -43,6 +43,7 @@ UserSchema.methods.getEndpointForDomain = async function() {
     } 
  
     return endpoint;
+    
 };
 
 const UserModel = mongoose.model('User', UserSchema);
